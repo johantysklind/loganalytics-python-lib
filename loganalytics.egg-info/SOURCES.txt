@@ -1,0 +1,8 @@
+README.md
+setup.py
+loganalytics/__init__.py
+loganalytics/databricksfunctions.py
+loganalytics.egg-info/PKG-INFO
+loganalytics.egg-info/SOURCES.txt
+loganalytics.egg-info/dependency_links.txt
+loganalytics.egg-info/top_level.txt

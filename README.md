@@ -1,0 +1,1 @@
+# loganalytics-python-lib

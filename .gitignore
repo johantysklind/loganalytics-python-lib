@@ -1,0 +1,6 @@
+.eggs/*
+.vscode/*
+loggingenv/*
+loggingenv.egg-info/*
+build/*
+Test.py

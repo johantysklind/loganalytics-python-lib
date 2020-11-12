@@ -1,0 +1,259 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "e2c49a52-5d65-40d1-b0ee-567d42beb424",
+            "version": "KqlParameterItem/1.0",
+            "name": "Time",
+            "type": 4,
+            "value": {
+              "durationMs": 7776000000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 300000
+                },
+                {
+                  "durationMs": 900000
+                },
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2419200000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ]
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters - 4"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "DatabricksLogtemp_CL\r\n| where guid_g != \"\" and total_duration_s != \"\"\r\n| extend dur =  bin(((totimespan(total_duration_s)) / 1s) , 10)\r\n| project  Duration = strcat(tostring(dur) ,\" - \" , tostring((dur +10)))\r\n| order by Duration\r\n| summarize Count = count() by Duration\r\n|render columnchart",
+        "size": 0,
+        "timeContext": {
+          "durationMs": 172800000
+        },
+        "timeContextFromParameter": "Time",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "chartSettings": {
+          "xAxis": "Duration",
+          "yAxis": [
+            "Count"
+          ],
+          "xSettings": {
+            "numberFormatSettings": {
+              "unit": 0,
+              "options": {
+                "style": "decimal",
+                "useGrouping": true
+              }
+            }
+          }
+        }
+      },
+      "customWidth": "25",
+      "name": "query - 3"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let Parameters = DatabricksLogtemp_CL \r\n| where guid_g != \"\" \r\n| extend log = parse_json(customlog_s)  \r\n| project parameter = log[0].parameter, guid_g ,notebook_s\r\n| where parameter != \"\";\r\n\r\nlet Duration = DatabricksLogtemp_CL \r\n| where guid_g != \"\" \r\n| project guid_g , total_duration_s, EndTime = TimeGenerated\r\n| where total_duration_s != \"\";\r\n\r\nParameters\r\n| join kind = leftouter  (Duration)\r\non $left.guid_g == $right.guid_g\r\n| project guid_g, EndTime, notebook_s, parameter, total_duration_s\r\n| order by EndTime asc\r\n",
+        "size": 0,
+        "timeContext": {
+          "durationMs": 172800000
+        },
+        "timeContextFromParameter": "Time",
+        "exportFieldName": "guid_g",
+        "exportParameterName": "guid2",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "gridSettings": {
+          "sortBy": [
+            {
+              "itemKey": "EndTime",
+              "sortOrder": 2
+            }
+          ]
+        },
+        "sortBy": [
+          {
+            "itemKey": "EndTime",
+            "sortOrder": 2
+          }
+        ]
+      },
+      "customWidth": "75",
+      "name": "query - 3"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "DatabricksLogtemp_CL \n| where guid_g == \"{guid2}\"\n| extend step = strcat(\"Step \" ,  tostring(toint(step_id_d)))\n| project step, (totimespan(duration_from_laststep_s)) / 1s\n|order by step asc\n\n",
+        "size": 0,
+        "timeContext": {
+          "durationMs": 172800000
+        },
+        "timeContextFromParameter": "Time",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "categoricalbar",
+        "tileSettings": {
+          "titleContent": {
+            "columnMatch": "titleT",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "total_duration_s",
+            "formatter": 6
+          },
+          "showBorder": false
+        }
+      },
+      "customWidth": "25",
+      "name": "query - 2 - Copy"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let child = DatabricksLogtemp_CL\n    | where guid_g == \"{guid2}\"\n    | extend log = parse_json(customlog_s) \n    | extend respercent = toint(log[0].result.unexpected_percent)\n    | extend reicon = case(respercent == 0, '🟢',\n                            respercent <= 10, '🟡', '🔴'  )\n    | project id = tostring(step_id_d) , parentid = guid_g , Test = log[0].expectation_config.expectation_type, Column = log[0].expectation_config.kwargs.column , BadPercent = strcat(respercent, \" %\"),reicon\n    | where Test != \"\";\n\nlet parent = DatabricksLogtemp_CL\n| where guid_g == \"{guid2}\"\n| extend log = parse_json(customlog_s)  \n| project id = guid_g ,  parentid = '', FilePath = log[0].filepath , Rows =  log[0].rows, Size =  log[0].size\n| where FilePath != \"\";\n\nchild\n| union (parent)\n",
+              "size": 1,
+              "timeContext": {
+                "durationMs": 172800000
+              },
+              "timeContextFromParameter": "Time",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "id",
+                    "formatter": 5
+                  },
+                  {
+                    "columnMatch": "parentid",
+                    "formatter": 5
+                  }
+                ],
+                "hierarchySettings": {
+                  "idColumn": "id",
+                  "parentColumn": "parentid",
+                  "treeType": 0,
+                  "expanderColumn": "reicon"
+                }
+              },
+              "sortBy": [],
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "titleT",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "total_duration_s",
+                  "formatter": 6
+                },
+                "showBorder": false
+              }
+            },
+            "showPin": false,
+            "name": "query - 2"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "DatabricksLogtemp_CL\r\n| where guid_g == \"{guid2}\"\r\n| project step_id_d, TimeGenerated, action_s, duration_from_laststep_s, log = parse_json(customlog_s)  ",
+              "size": 4,
+              "timeContext": {
+                "durationMs": 172800000
+              },
+              "timeContextFromParameter": "Time",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "gridSettings": {
+                "sortBy": [
+                  {
+                    "itemKey": "step_id_d",
+                    "sortOrder": 1
+                  }
+                ]
+              },
+              "sortBy": [
+                {
+                  "itemKey": "step_id_d",
+                  "sortOrder": 1
+                }
+              ]
+            },
+            "name": "query - 4"
+          }
+        ]
+      },
+      "customWidth": "75",
+      "name": "group - 5"
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/e1644377-d092-4ecc-ab78-0c5f1bc0a416/resourceGroups/rg-synapse/providers/Microsoft.OperationalInsights/workspaces/la-synapse-001"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
